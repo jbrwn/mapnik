@@ -110,7 +110,7 @@ public:
      *  @param height Initial map height.
      *  @param srs Initial map projection.
      */
-    Map(int width, int height, std::string const& srs=MAPNIK_LONGLAT_PROJ);
+    Map(int width, int height, std::string const& srs = MAPNIK_LONGLAT_PROJ);
 
     /*! \brief Copy Constructor.
      *
@@ -118,12 +118,14 @@ public:
      */
     Map(Map const& rhs);
 
-    /*! \brief Assignment operator
-     *
-     *  TODO: to be documented
-     *
-     */
+    // move ctor
+    Map(Map && other);
+
+    // assignment operator
     Map& operator=(Map rhs);
+
+    // comparison op
+    bool operator==(Map const& other) const;
 
     /*! \brief Get all styles
      * @return Const reference to styles
@@ -161,8 +163,7 @@ public:
      *  @return true If success.
      *          false If no success.
      */
-    bool insert_style(std::string const& name,feature_type_style const& style);
-    bool insert_style(std::string const& name,feature_type_style && style);
+    bool insert_style(std::string const& name,feature_type_style style);
 
     /*! \brief Remove a style from the map.
      *  @param name The name of the style.
@@ -181,8 +182,7 @@ public:
      *  @return true If success.
      *          false If failure.
      */
-    bool insert_fontset(std::string const& name, font_set const& fontset);
-    bool insert_fontset(std::string const& name, font_set && fontset);
+    bool insert_fontset(std::string const& name, font_set fontset);
 
     /*! \brief Find a fontset.
      *  @param name The name of the fontset.
@@ -207,7 +207,7 @@ public:
     /*! \brief Add a layer to the map.
      *  @param l The layer to add.
      */
-    void add_layer(layer const& l);
+    void add_layer(layer l);
 
     /*! \brief Get a layer.
      *  @param index layer number.
@@ -429,6 +429,7 @@ public:
     void set_extra_parameters(parameters& params);
 
 private:
+    friend void swap(Map & rhs, Map & lhs);
     void fixAspectRatio();
 };
 

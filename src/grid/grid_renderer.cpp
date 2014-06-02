@@ -63,19 +63,19 @@ grid_renderer<T>::grid_renderer(Map const& m, T & pixmap, double scale_factor, u
       ras_ptr(new grid_rasterizer),
       // NOTE: can change this to m dims instead of pixmap_ if render-time
       // resolution support is dropped from grid_renderer python interface
-      common_(m, offset_x, offset_y, pixmap_.width(), pixmap_.height(), scale_factor)
+      common_(m, attributes(), offset_x, offset_y, pixmap_.width(), pixmap_.height(), scale_factor)
 {
     setup(m);
 }
 
 template <typename T>
-grid_renderer<T>::grid_renderer(Map const& m, request const& req, T & pixmap, double scale_factor, unsigned offset_x, unsigned offset_y)
+grid_renderer<T>::grid_renderer(Map const& m, request const& req, attributes const& vars, T & pixmap, double scale_factor, unsigned offset_x, unsigned offset_y)
     : feature_style_processor<grid_renderer>(m, scale_factor),
       pixmap_(pixmap),
       ras_ptr(new grid_rasterizer),
       // NOTE: can change this to m dims instead of pixmap_ if render-time
       // resolution support is dropped from grid_renderer python interface
-      common_(req, offset_x, offset_y, pixmap_.width(), pixmap_.height(), scale_factor)
+      common_(req, vars, offset_x, offset_y, pixmap_.width(), pixmap_.height(), scale_factor)
 {
     setup(m);
 }
@@ -130,7 +130,7 @@ void grid_renderer<T>::end_layer_processing(layer const&)
 }
 
 template <typename T>
-void grid_renderer<T>::render_marker(mapnik::feature_impl & feature, unsigned int step, pixel_position const& pos, marker const& marker, agg::trans_affine const& tr, double opacity, composite_mode_e /*comp_op*/)
+void grid_renderer<T>::render_marker(mapnik::feature_impl const& feature, unsigned int step, pixel_position const& pos, marker const& marker, agg::trans_affine const& tr, double opacity, composite_mode_e /*comp_op*/)
 {
     if (marker.is_vector())
     {
