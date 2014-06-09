@@ -24,6 +24,7 @@
 // variant
 #include "/Users/artem/Projects/variant/variant.hpp"
 
+using namespace mapbox;
 
 namespace boost { namespace detail { namespace variant {
 
@@ -34,7 +35,7 @@ inline void hash_combine(std::size_t& seed, const T& v)
     seed ^= hasher(v) + 0x9e3779b9 + (seed<<6) + (seed>>2);
 }
 
-struct variant_hasher: public ::util::static_visitor<std::size_t>
+struct variant_hasher: public util::static_visitor<std::size_t>
 {
     template <class T>
     std::size_t operator()(T const& val) const
@@ -48,11 +49,11 @@ struct variant_hasher: public ::util::static_visitor<std::size_t>
 template <typename T>
 std::size_t hash_value(T const& val)
 {
-    std::size_t seed = ::util::apply_visitor(detail::variant::variant_hasher(), val);
+    std::size_t seed = util::apply_visitor(detail::variant::variant_hasher(), val);
     hash_combine(seed, val.which());
     return seed;
 }
 
 }
 
-#endif
+#endif // MAPNIK_HASH_VARIANT_HPP

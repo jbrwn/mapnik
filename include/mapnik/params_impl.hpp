@@ -46,6 +46,7 @@
 
 namespace mapnik { namespace detail {
 
+using namespace mapbox;
 
 template <typename T>
 struct extract_value
@@ -123,7 +124,7 @@ boost::optional<T> param_cast(std::string const& source)
 } // end namespace detail
 
 template <typename T>
-struct value_extractor_visitor : public ::util::static_visitor<>
+struct value_extractor_visitor : public mapbox::util::static_visitor<>
 {
 
     value_extractor_visitor(boost::optional<T> & var)
@@ -169,7 +170,7 @@ struct converter
         parameters::const_iterator itr = params.find(name);
         if (itr != params.end())
         {
-            ::util::apply_visitor(value_extractor_visitor<T>(result),itr->second);
+            mapbox::util::apply_visitor(value_extractor_visitor<T>(result),itr->second);
         }
         return result;
     }

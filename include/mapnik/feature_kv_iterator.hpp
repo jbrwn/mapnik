@@ -74,7 +74,7 @@ struct value_not_null
 {
     bool operator() (feature_kv_iterator::value_type const& kv) const
     {
-        return !::util::apply_visitor(is_null, std::get<1>(kv).base());
+        return !mapbox::util::apply_visitor(is_null, std::get<1>(kv).base());
     }
 };
 

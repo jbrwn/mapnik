@@ -192,7 +192,7 @@ std::shared_ptr<mapnik::parameter> create_parameter_from_string(mapnik::value_un
     std::string ustr_utf8;
     mapnik::to_utf8(key, key_utf8);
     mapnik::to_utf8(ustr,ustr_utf8);
-    return std::make_shared<mapnik::parameter>(key_utf8, ustr_utf8);
+    return std::make_shared<mapnik::parameter>(key_utf8, std::move(ustr_utf8));
 }
 
 void export_parameters()

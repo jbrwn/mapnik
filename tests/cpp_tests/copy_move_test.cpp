@@ -24,9 +24,9 @@ int main(int argc, char** argv)
     // mapnik::datasource
     mapnik::datasource_cache::instance().register_datasources("plugins/input/");
     mapnik::parameters p;
-    p["type"]="shape";
-    p["file"]="demo/data/boundaries";
-    p["encoding"]="latin1";
+    p["type"] = std::string("shape");
+    p["file"] = std::string("demo/data/boundaries");
+    p["encoding"] = std::string("latin1");
     auto ds0 = mapnik::datasource_cache::instance().create(p);
 
     auto ds1 = ds0; // shared ptr copy

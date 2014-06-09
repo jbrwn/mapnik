@@ -50,7 +50,7 @@ int main(int argc, char** argv)
         feature->add_geometry(pt.release());
 
         mapnik::parameters params;
-        params["type"]="memory";
+        params["type"] = std::string("memory");
         auto ds = std::make_shared<mapnik::memory_datasource>(params);
         ds->push(feature);
         mapnik::Map m(256,256);
