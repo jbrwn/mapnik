@@ -336,8 +336,9 @@ T xml_node::get_attr(std::string const& name) const
     throw attribute_not_found(name_, name);
 }
 
-std::string xml_node::get_text() const
+std::string const& xml_node::get_text() const
 {
+    // FIXME : return boost::optional<std::string const&>
     if (children_.empty())
     {
         if (is_text_)
@@ -346,7 +347,8 @@ std::string xml_node::get_text() const
         }
         else
         {
-            return "";
+            const static std::string empty;
+            return empty;
         }
     }
     if (children_.size() == 1)

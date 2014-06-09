@@ -512,11 +512,10 @@ void map_parser::parse_fontset(Map & map, xml_node const& fset)
             throw mapnik::config_error("no valid fonts could be loaded");
         }
 
-        map.insert_fontset(name, std::move(fontset));
-
         // XXX Hack because map object isn't accessible by text_symbolizer
         // when it's parsed
         fontsets_.insert(std::make_pair(name, fontset));
+        map.insert_fontset(name, std::move(fontset));
     }
     catch (config_error const& ex)
     {
@@ -649,7 +648,7 @@ void map_parser::parse_layer(Map & map, xml_node const& node)
 
             if (child.is("StyleName"))
             {
-                std::string style_name = child.get_text();
+                std::string const& style_name = child.get_text();
                 if (style_name.empty())
                 {
                     std::string ss("StyleName is empty in Layer: '");
@@ -724,7 +723,7 @@ void map_parser::parse_layer(Map & map, xml_node const& node)
                 }
             }
         }
-        map.add_layer(lyr);
+        map.add_layer(std::move(lyr));
     }
     catch (config_error const& ex)
     {

@@ -293,7 +293,8 @@ struct dispatcher
     dispatcher(args_type const& args)
         : args_(args)
     {
-        std::memset(&vec_[0], 0,  sizeof(unsigned)*vec_.size());
+        //std::memset(&vec_[0], 0,  sizeof(unsigned)*vec_.size());
+        std::fill(vec_.begin(), vec_.end(), 0);
     }
 
     template <typename Iter, typename End, typename Geometry>
@@ -362,7 +363,7 @@ struct vertex_converter : private mapnik::noncopyable
     vertex_converter(bbox_type const& b,
                      rasterizer_type & ras,
                      symbolizer_type const& sym,
-                     trans_type & tr,
+                     trans_type const& tr,
                      proj_trans_type const& prj_trans,
                      affine_trans_type const& affine_trans,
                      feature_type const& feature,

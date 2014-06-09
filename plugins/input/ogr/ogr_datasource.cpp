@@ -71,7 +71,11 @@ ogr_datasource::~ogr_datasource()
 {
     // free layer before destroying the datasource
     layer_.free_layer();
+#if GDAL_VERSION_MAJOR >= 2
+    GDALClose(( GDALDatasetH) dataset_);
+#else
     OGRDataSource::DestroyDataSource (dataset_);
+#endif
 }
 
 void ogr_datasource::init(mapnik::parameters const& params)
@@ -81,6 +85,7 @@ void ogr_datasource::init(mapnik::parameters const& params)
 #endif
 
     // initialize ogr formats
+    // NOTE: in GDAL >= 2.0 this is the same as GDALAllRegister()
     OGRRegisterAll();
 
     boost::optional<std::string> file = params.get<std::string>("file");
@@ -111,17 +116,26 @@ void ogr_datasource::init(mapnik::parameters const& params)
 
     if (! driver.empty())
     {
+#if GDAL_VERSION_MAJOR >= 2
+        unsigned int nOpenFlags = GDAL_OF_READONLY | GDAL_OF_VECTOR;
+        const char* papszAllowedDrivers[] = { driver.c_str(), NULL };
+        dataset_ = static_cast<gdal_dataset_type>(GDALOpenEx(dataset_name_.c_str(),nOpenFlags,papszAllowedDrivers,NULL,NULL));
+#else
         OGRSFDriver * ogr_driver = OGRSFDriverRegistrar::GetRegistrar()->GetDriverByName(driver.c_str());
         if (ogr_driver && ogr_driver != nullptr)
         {
             dataset_ = ogr_driver->Open((dataset_name_).c_str(), FALSE);
         }
-
+#endif
     }
     else
     {
         // open ogr driver
-        dataset_ = OGRSFDriverRegistrar::Open((dataset_name_).c_str(), FALSE);
+#if GDAL_VERSION_MAJOR >= 2
+        dataset_ = static_cast<gdal_dataset_type>(OGROpen(dataset_name_.c_str(), FALSE, NULL));
+#else
+        dataset_ = OGRSFDriverRegistrar::Open(dataset_name_.c_str(), FALSE);
+#endif
     }
 
     if (! dataset_)

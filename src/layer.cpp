@@ -42,7 +42,7 @@ layer::layer(std::string const& name, std::string const& srs)
       group_by_(""),
       ds_() {}
 
-layer::layer(const layer& rhs)
+layer::layer(layer const& rhs)
     : name_(rhs.name_),
       srs_(rhs.srs_),
       min_zoom_(rhs.min_zoom_),
@@ -57,15 +57,60 @@ layer::layer(const layer& rhs)
       buffer_size_(rhs.buffer_size_),
       maximum_extent_(rhs.maximum_extent_) {}
 
+layer::layer(layer && rhs)
+    : name_(std::move(rhs.name_)),
+      srs_(std::move(rhs.srs_)),
+      min_zoom_(std::move(rhs.min_zoom_)),
+      max_zoom_(std::move(rhs.max_zoom_)),
+      active_(std::move(rhs.active_)),
+      queryable_(std::move(rhs.queryable_)),
+      clear_label_cache_(std::move(rhs.clear_label_cache_)),
+      cache_features_(std::move(rhs.cache_features_)),
+      group_by_(std::move(rhs.group_by_)),
+      styles_(std::move(rhs.styles_)),
+      ds_(std::move(rhs.ds_)),
+      buffer_size_(std::move(rhs.buffer_size_)),
+      maximum_extent_(std::move(rhs.maximum_extent_)) {}
+
 layer& layer::operator=(layer rhs)
 {
-    std::swap(*this, rhs);
+    swap(*this, rhs);
     return *this;
 }
 
-bool layer::operator==(layer const& other) const
+void swap(layer & lhs, layer & rhs)
 {
-    return (this == &other);
+    using std::swap;
+    std::swap(lhs.name_,rhs.name_);
+    std::swap(lhs.srs_, rhs.srs_);
+    std::swap(lhs.min_zoom_, rhs.min_zoom_);
+    std::swap(lhs.max_zoom_,rhs.max_zoom_);
+    std::swap(lhs.active_, rhs.active_);
+    std::swap(lhs.queryable_, rhs.queryable_);
+    std::swap(lhs.clear_label_cache_, rhs.clear_label_cache_);
+    std::swap(lhs.cache_features_, rhs.cache_features_);
+    std::swap(lhs.group_by_, rhs.group_by_);
+    std::swap(lhs.styles_, rhs.styles_);
+    std::swap(lhs.ds_, rhs.ds_);
+    std::swap(lhs.buffer_size_, rhs.buffer_size_);
+    std::swap(lhs.maximum_extent_, rhs.maximum_extent_);
+}
+
+bool layer::operator==(layer const& rhs) const
+{
+    return (name_ == rhs.name_) &&
+        (srs_ == rhs.srs_) &&
+        (min_zoom_ == rhs.min_zoom_) &&
+        (max_zoom_ == rhs.max_zoom_) &&
+        (active_ == rhs.active_) &&
+        (queryable_ == rhs.queryable_) &&
+        (clear_label_cache_ == rhs.clear_label_cache_) &&
+        (cache_features_ == rhs.cache_features_) &&
+        (group_by_ == rhs.group_by_) &&
+        (styles_ == rhs.styles_) &&
+        ((ds_ && rhs.ds_) ? *ds_ == *rhs.ds_ : ds_ == rhs.ds_) &&
+        (buffer_size_ == rhs.buffer_size_) &&
+        (maximum_extent_ == rhs.maximum_extent_);
 }
 
 layer::~layer() {}
