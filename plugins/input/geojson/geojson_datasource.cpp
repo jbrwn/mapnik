@@ -97,9 +97,9 @@ struct attr_value_converter : public ::util::static_visitor<mapnik::eAttributeTy
 };
 
 geojson_datasource::geojson_datasource(parameters const& params)
-: datasource(params),
+  : datasource(params),
     type_(datasource::Vector),
-    desc_(*params.get<std::string>("type"),
+    desc_(geojson_datasource::name(),
           *params.get<std::string>("encoding","utf-8")),
     file_(*params.get<std::string>("file","")),
     extent_(),

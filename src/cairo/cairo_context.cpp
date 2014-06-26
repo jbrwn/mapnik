@@ -66,7 +66,7 @@ void cairo_context::show_page()
     check_object_status_and_throw_exception(*this);
 }
 
-void cairo_context::set_color(color const &color, double opacity)
+void cairo_context::set_color(color const& color, double opacity)
 {
     set_color(color.red()/255.0, color.green()/255.0, color.blue()/255.0, color.alpha() * opacity / 255.0);
 }
@@ -430,6 +430,8 @@ void cairo_context::glyph_path(unsigned long index, pixel_position const &pos)
 void cairo_context::add_text(glyph_positions_ptr path,
                              cairo_face_manager & manager,
                              face_manager<freetype_engine> & font_manager,
+                             composite_mode_e comp_op,
+                             composite_mode_e halo_comp_op,
                              double scale_factor)
 {
     pixel_position const& base_point = path->get_base_point();
@@ -439,7 +441,8 @@ void cairo_context::add_text(glyph_positions_ptr path,
     //render halo
     double halo_radius = 0;
     char_properties_ptr format;
-    for (auto const &glyph_pos : *path)
+    set_operator(halo_comp_op);
+    for (auto const& glyph_pos : *path)
     {
         glyph_info const& glyph = *(glyph_pos.glyph);
 
@@ -469,10 +472,10 @@ void cairo_context::add_text(glyph_positions_ptr path,
         glyph_path(glyph.glyph_index, pixel_position(sx + pos.x, sy - pos.y));
         set_line_width(2.0 * halo_radius);
         set_line_join(ROUND_JOIN);
-        set_color(format->halo_fill);
+        set_color(format->halo_fill, format->halo_opacity);
         stroke();
     }
-
+    set_operator(comp_op);
     for (auto const &glyph_pos : *path)
     {
         glyph_info const& glyph = *(glyph_pos.glyph);
@@ -496,7 +499,7 @@ void cairo_context::add_text(glyph_positions_ptr path,
         set_font_matrix(matrix);
         set_font_face(manager, glyph.face);
         pixel_position pos = glyph_pos.pos + glyph.offset.rotate(glyph_pos.rot);
-        set_color(format->fill);
+        set_color(format->fill, format->text_opacity);
         show_glyph(glyph.glyph_index, pixel_position(sx + pos.x, sy - pos.y));
     }
 
