@@ -53,7 +53,7 @@ using mapnik::byte;
 using mapnik::feature_factory;
 using mapnik::context_ptr;
 
-pgraster_featureset::pgraster_featureset(boost::shared_ptr<IResultSet> const& rs,
+pgraster_featureset::pgraster_featureset(std::shared_ptr<IResultSet> const& rs,
                                        context_ptr const& ctx,
                                        std::string const& encoding,
                                        bool key_field, int bandno)

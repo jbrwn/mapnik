@@ -37,12 +37,13 @@
 
 // boost
 #include <boost/optional.hpp>
-#include <boost/shared_ptr.hpp>
-#include <boost/scoped_ptr.hpp>
+//#include <boost/shared_ptr.hpp>
+//#include <boost/scoped_ptr.hpp>
 
 // stl
 #include <vector>
 #include <string>
+#include <memory>
 
 #include "connection_manager.hpp"
 #include "resultset.hpp"
@@ -60,7 +61,7 @@ using mapnik::query;
 using mapnik::parameters;
 using mapnik::coord2d;
 
-typedef boost::shared_ptr< ConnectionManager::PoolType> CnxPool_ptr;
+typedef std::shared_ptr< ConnectionManager::PoolType> CnxPool_ptr;
 
 struct pgraster_overview
 {
@@ -90,7 +91,7 @@ private:
     std::string sql_bbox(box2d<double> const& env) const;
     std::string populate_tokens(std::string const& sql, double scale_denom, box2d<double> const& env, double pixel_width, double pixel_height) const;
     std::string populate_tokens(std::string const& sql) const;
-    boost::shared_ptr<IResultSet> get_resultset(boost::shared_ptr<Connection> &conn, std::string const& sql, CnxPool_ptr const& pool, processor_context_ptr ctx= processor_context_ptr()) const;
+    std::shared_ptr<IResultSet> get_resultset(std::shared_ptr<Connection> &conn, std::string const& sql, CnxPool_ptr const& pool, processor_context_ptr ctx= processor_context_ptr()) const;
     static const std::string RASTER_COLUMNS;
     static const std::string RASTER_OVERVIEWS;
     static const std::string SPATIAL_REF_SYS;
