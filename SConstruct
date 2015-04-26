@@ -125,7 +125,8 @@ PLUGINS = { # plugins with external dependencies
             'csv':     {'default':True,'path':None,'inc':None,'lib':None,'lang':'C++'},
             'raster':  {'default':True,'path':None,'inc':None,'lib':None,'lang':'C++'},
             'geojson': {'default':True,'path':None,'inc':None,'lib':None,'lang':'C++'},
-            'topojson':{'default':True,'path':None,'inc':None,'lib':None,'lang':'C++'}
+            'topojson':{'default':True,'path':None,'inc':None,'lib':None,'lang':'C++'},
+            'mssql'   :{'default':False,'path':'ODBC','inc':'sql.h','lib':'odbc','lang':'C'}
             }
 
 
@@ -386,6 +387,9 @@ opts.AddVariables(
     PathVariable('SQLITE_LIBS', 'Search path for SQLITE library files', '/usr/' + LIBDIR_SCHEMA_DEFAULT, PathVariable.PathAccept),
     PathVariable('RASTERLITE_INCLUDES', 'Search path for RASTERLITE include files', '/usr/include/', PathVariable.PathAccept),
     PathVariable('RASTERLITE_LIBS', 'Search path for RASTERLITE library files', '/usr/' + LIBDIR_SCHEMA_DEFAULT, PathVariable.PathAccept),
+
+    PathVariable('ODBC_INCLUDES', 'Search path for ODBC include files', '/usr/include/', PathVariable.PathAccept),
+    PathVariable('ODBC_LIBS', 'Search path for ODBC library files', '/usr/' + LIBDIR_SCHEMA_DEFAULT, PathVariable.PathAccept),
 
     # Variables for logging and statistics
     BoolVariable('ENABLE_LOG', 'Enable logging, which is enabled by default when building in *debug*', 'False'),
@@ -1503,7 +1507,8 @@ if not preconfigured:
                     libpath = env['%s_LIBS' % details['path']]
                     env.PrependUnique(CPPPATH = fix_path(incpath),delete_existing=True)
                     env.PrependUnique(LIBPATH = fix_path(libpath),delete_existing=True)
-                    if not conf.CheckLibWithHeader(details['lib'], details['inc'], details['lang']):
+                    if not conf.CheckLibWithHeader(details['lib'], details['inc'],
+                        details['lang']):
                         env.Replace(**backup)
                         env['SKIPPED_DEPS'].append(details['lib'])
                     if plugin == 'sqlite':
@@ -1543,6 +1548,7 @@ if not preconfigured:
 
             # re-append the local paths for mapnik sources to the beginning of the list
             # to make sure they come before any plugins that were 'prepended'
+
             env.PrependUnique(CPPPATH = '#include', delete_existing=True)
             env.PrependUnique(LIBPATH = '#src', delete_existing=True)
 
