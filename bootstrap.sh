@@ -20,7 +20,6 @@ function setup_mason() {
         (cd ./.mason && git pull)
     fi
     export MASON_DIR=$(pwd)/.mason
-    if [[ $(uname -s) == 'Linux' ]]; then source ./.mason/scripts/setup_cpp11_toolchain.sh; fi
     export PATH=$(pwd)/.mason:$PATH
     export CXX=${CXX:-clang++}
     export CC=${CC:-clang}
@@ -28,15 +27,15 @@ function setup_mason() {
 
 function install() {
     MASON_PLATFORM_ID=$(mason env MASON_PLATFORM_ID)
-    if [[ ! -d ./mason_packages/${MASON_PLATFORM_ID}/${1}/ ]]; then
+    if [[ ! -d ./mason_packages/${MASON_PLATFORM_ID}/${1}/${2} ]]; then
         mason install $1 $2
         mason link $1 $2
     fi
 }
 
 function install_mason_deps() {
-    install freetype 2.5.4
-    install harfbuzz 2cd5323
+    install freetype 2.5.5
+    install harfbuzz 0.9.40
     install jpeg_turbo 1.4.0
     install libxml2 2.9.2
     install libpng 1.6.16
@@ -50,9 +49,10 @@ function install_mason_deps() {
     install boost_libfilesystem 1.57.0
     install boost_libprogram_options 1.57.0
     install boost_libregex 1.57.0
+    install boost_libpython 1.57.0
     install libpq 9.4.0
     install sqlite 3.8.8.1
-    install gdal 1.11.1
+    install gdal 1.11.2
     install expat 2.1.0
     install pixman 0.32.6
     install cairo 1.12.18
@@ -60,6 +60,9 @@ function install_mason_deps() {
 
 MASON_LINKED_ABS=$(pwd)/mason_packages/.link
 MASON_LINKED_REL=./mason_packages/.link
+export C_INCLUDE_PATH="${MASON_LINKED_ABS}/include"
+export CPLUS_INCLUDE_PATH="${MASON_LINKED_ABS}/include"
+export LIBRARY_PATH="${MASON_LINKED_ABS}/lib"
 
 function make_config() {
     if [[ $(uname -s) == 'Darwin' ]]; then
@@ -114,10 +117,12 @@ SAMPLE_INPUT_PLUGINS = True
 " > ./config.py
 }
 
+# NOTE: the `mapnik-settings.env` is used by test/run (which is run by `make test`)
 function setup_runtime_settings() {
-    export PROJ_LIB=${MASON_LINKED_ABS}/share/proj
-    export ICU_DATA=${MASON_LINKED_ABS}/share/icu/54.1
-    export GDAL_DATA=${MASON_LINKED_ABS}/share/gdal
+    echo "export PROJ_LIB=${MASON_LINKED_ABS}/share/proj" > mapnik-settings.env
+    echo "export ICU_DATA=${MASON_LINKED_ABS}/share/icu/54.1" >> mapnik-settings.env
+    echo "export GDAL_DATA=${MASON_LINKED_ABS}/share/gdal" >> mapnik-settings.env
+    source mapnik-settings.env
 }
 
 function main() {

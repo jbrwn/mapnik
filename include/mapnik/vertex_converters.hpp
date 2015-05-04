@@ -42,7 +42,6 @@
 #include "agg_trans_affine.h"
 #include "agg_conv_clip_polygon.h"
 #include "agg_conv_clip_polyline.h"
-#include "agg_conv_close_polygon.h"
 #include "agg_conv_smooth_poly1.h"
 #include "agg_conv_stroke.h"
 #include "agg_conv_dash.h"
@@ -58,7 +57,6 @@ namespace mapnik {
 struct transform_tag {};
 struct clip_line_tag {};
 struct clip_poly_tag {};
-struct close_poly_tag {};
 struct smooth_tag {};
 struct simplify_tag {};
 struct stroke_tag {};
@@ -206,15 +204,6 @@ struct converter_traits<T,mapnik::clip_poly_tag>
 };
 
 template <typename T>
-struct converter_traits<T,mapnik::close_poly_tag>
-{
-    using geometry_type = T;
-    using conv_type = typename agg::conv_close_polygon<geometry_type>;
-    template <typename Args>
-    static void setup(geometry_type & , Args const&) {}
-};
-
-template <typename T>
 struct converter_traits<T,mapnik::transform_tag>
 {
     using geometry_type = T;
@@ -263,6 +252,35 @@ struct converter_traits<T,mapnik::offset_transform_tag>
     }
 };
 
+
+template <typename T0, typename T1>
+struct is_switchable
+{
+    static constexpr bool value = true;
+};
+
+template <typename T>
+struct is_switchable<T,transform_tag>
+{
+    static constexpr bool value = false;
+};
+
+// https://github.com/mapnik/mapnik/issues/2791
+/*
+template <typename T>
+struct is_switchable<T,stroke_tag>
+{
+    static constexpr bool value = false;
+};
+
+template <typename T>
+struct is_switchable<T,offset_transform_tag>
+{
+    static constexpr bool value = false;
+};
+*/
+
+
 template <typename Dispatcher, typename... ConverterTypes>
 struct converters_helper;
 
@@ -285,9 +303,7 @@ struct converters_helper<Dispatcher,Current,ConverterTypes...>
 
     template <typename Geometry, typename Processor>
     static void forward(Dispatcher & disp, Geometry & geom, Processor & proc,
-                        typename std::enable_if<!std::is_same
-                        <typename detail::converter_traits<Geometry,Current>::conv_type,
-                        transform_path_adapter<view_transform, Geometry> >::value >::type* = 0)
+                        typename std::enable_if<detail::is_switchable<Geometry,Current>::value>::type* = 0)
     {
         constexpr std::size_t index = sizeof...(ConverterTypes);
         if (disp.vec_[index] == 1)
@@ -304,9 +320,7 @@ struct converters_helper<Dispatcher,Current,ConverterTypes...>
     }
     template <typename Geometry, typename Processor>
     static void forward(Dispatcher & disp, Geometry & geom, Processor & proc,
-                        typename std::enable_if<std::is_same
-                        <typename detail::converter_traits<Geometry,Current>::conv_type,
-                        transform_path_adapter<view_transform, Geometry> >::value >::type* = 0)
+                        typename std::enable_if<!detail::is_switchable<Geometry,Current>::value>::type* = 0)
     {
         using conv_type = typename detail::converter_traits<Geometry,Current>::conv_type;
         conv_type conv(geom);
@@ -371,11 +385,10 @@ struct arguments : util::noncopyable
 
 }
 
-template <typename Processor, typename... ConverterTypes >
+template <typename... ConverterTypes >
 struct vertex_converter : private util::noncopyable
 {
     using bbox_type = box2d<double>;
-    using processor_type = Processor;
     using symbolizer_type = symbolizer_base;
     using trans_type = view_transform;
     using proj_trans_type = proj_transform;
@@ -385,7 +398,6 @@ struct vertex_converter : private util::noncopyable
     using dispatcher_type = detail::dispatcher<args_type, sizeof...(ConverterTypes)>;
 
     vertex_converter(bbox_type const& bbox,
-                     processor_type & proc,
                      symbolizer_type const& sym,
                      trans_type const& tr,
                      proj_trans_type const& prj_trans,
@@ -393,13 +405,12 @@ struct vertex_converter : private util::noncopyable
                      feature_type const& feature,
                      attributes const& vars,
                      double scale_factor)
-        : disp_(bbox,sym,tr,prj_trans,affine_trans,feature,vars,scale_factor),
-          proc_(proc) {}
+        : disp_(bbox,sym,tr,prj_trans,affine_trans,feature,vars,scale_factor) {}
 
-    template <typename VertexAdapter>
-    void apply(VertexAdapter & geom)
+    template <typename VertexAdapter, typename Processor>
+    void apply(VertexAdapter & geom, Processor & proc)
     {
-        detail::converters_helper<dispatcher_type, ConverterTypes...>:: template forward<VertexAdapter, Processor>(disp_, geom, proc_);
+        detail::converters_helper<dispatcher_type, ConverterTypes...>:: template forward<VertexAdapter, Processor>(disp_, geom, proc);
     }
 
     template <typename Converter>
@@ -415,7 +426,6 @@ struct vertex_converter : private util::noncopyable
     }
 
     dispatcher_type disp_;
-    Processor & proc_;
 };
 
 }
