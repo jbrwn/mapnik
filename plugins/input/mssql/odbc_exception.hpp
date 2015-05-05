@@ -15,7 +15,7 @@ class odbc_exception : public std::exception
 {
 public:
     odbc_exception(SQLRETURN rc, SQLSMALLINT handle_type, SQLHANDLE handle)
-    : message_("")
+      : message_("")
     {
         std::ostringstream ss;
         

@@ -19,22 +19,20 @@ class mssql_statement
     struct column_info
     {
         column_info()
-        : name(),
-        native_type(),
-        sql_type(0),
-        sql_size(0),
-        sql_scale(0),
-        sql_nullable(0),
-        c_type(0),
-        len_or_ind(0),
-		buffer(0),
-		lob(0)
-        {
-        }
+          : name(),
+            native_type(),
+            sql_type(0),
+            sql_size(0),
+            sql_scale(0),
+            sql_nullable(0),
+            c_type(0),
+            len_or_ind(0),
+            buffer(0),
+            lob(0)
+        {}
         ~column_info()
-        {
-            
-        }
+        {}
+
         std::string name;
         std::string native_type;
         SQLSMALLINT sql_type;
@@ -43,15 +41,15 @@ class mssql_statement
         SQLSMALLINT sql_nullable;
         SQLSMALLINT c_type;
         SQLLEN len_or_ind;
-		std::vector<char> buffer;
-		bool lob;
+        std::vector<char> buffer;
+        bool lob;
     };
     
 public:
     mssql_statement(mssql_connection& con, const std::string& sql)
-    : stmt_(0),
-	  sql_(sql),
-	  cols_(0)
+      : stmt_(0),
+        sql_(sql),
+        cols_(0)
     {
         SQLRETURN rc = SQLAllocHandle(SQL_HANDLE_STMT, con._get_connection_handle(), &stmt_);
         if (!SQL_SUCCEEDED(rc))
@@ -109,56 +107,56 @@ public:
             {
                 case SQL_WCHAR:
                 case SQL_WVARCHAR:
-					col.c_type = SQL_C_WCHAR;
-					col.buffer.resize(sizeof(SQLWCHAR) * (col.sql_size + 1));
-					break;
+                    col.c_type = SQL_C_WCHAR;
+                    col.buffer.resize(sizeof(SQLWCHAR) * (col.sql_size + 1));
+                    break;
                 case SQL_WLONGVARCHAR:
                     col.c_type = SQL_C_WCHAR;
-					col.lob = true;
-					init_lob_buffer(col.buffer);
+                    col.lob = true;
+                    init_lob_buffer(col.buffer);
                     break;
-				case SQL_CHAR:
-				case SQL_VARCHAR:
-					col.c_type = SQL_C_CHAR;
-					col.buffer.resize(sizeof(SQLCHAR) * (col.sql_size + 1));
-					break;
-				case SQL_LONGVARCHAR:
-					col.c_type = SQL_C_CHAR;
-					col.lob = true;
-					init_lob_buffer(col.buffer);
-					break;
-				case SQL_BINARY:
-				case SQL_VARBINARY:
-					col.c_type = SQL_C_CHAR;
-					col.buffer.resize(sizeof(SQLCHAR) * col.sql_size);
-					break;
-				case SQL_LONGVARBINARY:
-					col.c_type = SQL_C_CHAR;
-					col.lob = true;
-					init_lob_buffer(col.buffer);
-					break;
-				case SQL_BIT:
-				case SQL_TINYINT:
-				case SQL_SMALLINT:
-				case SQL_INTEGER:
-					col.c_type = SQL_C_LONG;
-					col.buffer.resize(sizeof(SQLINTEGER));
-					break;
-				case SQL_BIGINT:
-					col.c_type = SQL_C_SBIGINT;
-					col.buffer.resize(sizeof(SQLBIGINT));
-					break;
-				case SQL_DOUBLE:
-				case SQL_FLOAT:
-				case SQL_DECIMAL:
-				case SQL_REAL:
-				case SQL_NUMERIC:
-					col.c_type = SQL_C_DOUBLE;
-					col.buffer.resize(sizeof(SQLDOUBLE));
-					break;
+                case SQL_CHAR:
+                case SQL_VARCHAR:
+                    col.c_type = SQL_C_CHAR;
+                    col.buffer.resize(sizeof(SQLCHAR) * (col.sql_size + 1));
+                    break;
+                case SQL_LONGVARCHAR:
+                    col.c_type = SQL_C_CHAR;
+                    col.lob = true;
+                    init_lob_buffer(col.buffer);
+                    break;
+                case SQL_BINARY:
+                case SQL_VARBINARY:
+                    col.c_type = SQL_C_CHAR;
+                    col.buffer.resize(sizeof(SQLCHAR) * col.sql_size);
+                    break;
+                case SQL_LONGVARBINARY:
+                    col.c_type = SQL_C_CHAR;
+                    col.lob = true;
+                    init_lob_buffer(col.buffer);
+                    break;
+                case SQL_BIT:
+                case SQL_TINYINT:
+                case SQL_SMALLINT:
+                case SQL_INTEGER:
+                    col.c_type = SQL_C_LONG;
+                    col.buffer.resize(sizeof(SQLINTEGER));
+                    break;
+                case SQL_BIGINT:
+                    col.c_type = SQL_C_SBIGINT;
+                    col.buffer.resize(sizeof(SQLBIGINT));
+                    break;
+                case SQL_DOUBLE:
+                case SQL_FLOAT:
+                case SQL_DECIMAL:
+                case SQL_REAL:
+                case SQL_NUMERIC:
+                    col.c_type = SQL_C_DOUBLE;
+                    col.buffer.resize(sizeof(SQLDOUBLE));
+                    break;
                 default:
                     col.c_type = SQL_C_CHAR;
-					col.buffer.resize(64);
+                    col.buffer.resize(64);
                     break;
             }
             rc = SQLBindCol(
@@ -176,87 +174,87 @@ public:
     
     bool fetch()
     {
-		if (cols_ > 0)
-		{
-			//realloc lob buffers
-			for (int i = 0; i < cols_; i++)
-			{
-				if (column_info_[i].lob)
-					init_lob_buffer(column_info_[i].buffer);
-			}
+        if (cols_ > 0)
+        {
+            //realloc lob buffers
+            for (int i = 0; i < cols_; i++)
+            {
+                if (column_info_[i].lob)
+                    init_lob_buffer(column_info_[i].buffer);
+            }
 
-			SQLRETURN rc = SQLFetch(stmt_);
-			if SQL_SUCCEEDED(rc)
-				return true;
-			if (rc != SQL_NO_DATA)
-				throw odbc_exception(rc, SQL_HANDLE_STMT, stmt_);
-		}
+            SQLRETURN rc = SQLFetch(stmt_);
+            if SQL_SUCCEEDED(rc)
+                return true;
+            if (rc != SQL_NO_DATA)
+                throw odbc_exception(rc, SQL_HANDLE_STMT, stmt_);
+        }
 
         
         return false;
     }
 
-	short columns()
-	{
-		return cols_;
-	}
+    short columns()
+    {
+        return cols_;
+    }
 
-	bool is_null(int i)
-	{
-		column_info& col = column_info_[i];
-		return (col.len_or_ind == SQL_NULL_DATA);
-	}
+    bool is_null(int i)
+    {
+        column_info& col = column_info_[i];
+        return (col.len_or_ind == SQL_NULL_DATA);
+    }
 
-	std::string get_name(int i)
-	{
-		return column_info_[i].name;
-	}
+    std::string get_name(int i)
+    {
+        return column_info_[i].name;
+    }
 
-	std::string get_type(int i)
-	{
-		column_info_[i].native_type;
-	}
+    std::string get_type(int i)
+    {
+        column_info_[i].native_type;
+    }
 
-	int get_length(int i)
-	{
-		int value = 0;
-		column_info& col = column_info_[i];
-		if (col.len_or_ind != SQL_NULL_DATA)
-		{
-			switch (col.c_type)
-			{
-			case SQL_C_CHAR:
-				value = sizeof(SQLCHAR) * (col.len_or_ind + 1);
-				break;
-			case SQL_C_WCHAR:
-				value = sizeof(SQLWCHAR) * (col.len_or_ind + 1);
-			default:
-				value = col.len_or_ind;
-				break;
-			}
-		}
-		return value;
-	}
+    int get_length(int i)
+    {
+        int value = 0;
+        column_info& col = column_info_[i];
+        if (col.len_or_ind != SQL_NULL_DATA)
+        {
+            switch (col.c_type)
+            {
+            case SQL_C_CHAR:
+                value = sizeof(SQLCHAR) * (col.len_or_ind + 1);
+                break;
+            case SQL_C_WCHAR:
+                value = sizeof(SQLWCHAR) * (col.len_or_ind + 1);
+            default:
+                value = col.len_or_ind;
+                break;
+            }
+        }
+        return value;
+    }
     
     long get_int32(int i)
     {
-		char* buf = column_info_[i].buffer.data();
-		SQLINTEGER* value = reinterpret_cast<SQLINTEGER*>(buf);
-		return *value;
+        char* buf = column_info_[i].buffer.data();
+        SQLINTEGER* value = reinterpret_cast<SQLINTEGER*>(buf);
+        return *value;
     }
 
-	long long get_int64(int i)
-	{
-		char* buf = column_info_[i].buffer.data();
-		SQLBIGINT* value = reinterpret_cast<SQLBIGINT*>(buf);
-		return *value;
-	}
+    long long get_int64(int i)
+    {
+        char* buf = column_info_[i].buffer.data();
+        SQLBIGINT* value = reinterpret_cast<SQLBIGINT*>(buf);
+        return *value;
+    }
     
     double get_double(int i)
     {
-		char* buf = column_info_[i].buffer.data();
-		SQLDOUBLE* d = reinterpret_cast<SQLDOUBLE*>(buf);
-		return *d;
+        char* buf = column_info_[i].buffer.data();
+        SQLDOUBLE* d = reinterpret_cast<SQLDOUBLE*>(buf);
+        return *d;
     }
     
     const char* get_char(int i)
@@ -274,12 +272,12 @@ private:
     std::string sql_;
     SQLHSTMT stmt_;
 
-	void init_lob_buffer(std::vector<char>& buffer)
-	{
-		size_t size(1024);
-		if (buffer.size() != size)
-			buffer = std::vector<char>(size);
-	}
+    void init_lob_buffer(std::vector<char>& buffer)
+    {
+        size_t size(1024);
+        if (buffer.size() != size)
+            buffer = std::vector<char>(size);
+    }
 };
 
 #endif // MSSQL_STATEMENT_HPP

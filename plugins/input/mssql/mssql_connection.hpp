@@ -15,8 +15,8 @@ class mssql_connection
 {
 public:
     mssql_connection(const std::string& connection_string)
-        : env_(0),
-          con_(0)
+     : env_(0),
+       con_(0)
     {
         SQLRETURN rc;
         rc = SQLAllocHandle(SQL_HANDLE_ENV, SQL_NULL_HANDLE, &env_);
