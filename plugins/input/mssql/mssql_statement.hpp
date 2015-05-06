@@ -10,7 +10,6 @@
 #include <sql.h>
 #include <sqlext.h>
 
-
 #include <string>
 #include <vector>
 
@@ -27,7 +26,7 @@ class mssql_statement
             sql_nullable(0),
             c_type(0),
             len_or_ind(0),
-            buffer(0),
+            buffer(NULL),
             lob(0)
         {}
         ~column_info()
@@ -159,7 +158,30 @@ public:
                     col.buffer.resize(64);
                     break;
             }
-            rc = SQLBindCol(
+        }
+    }
+    
+    bool fetch()
+    {
+        if (!(cols_ > 0))
+            return false;
+    
+        SQLRETURN rc;
+        rc = SQLFetch(stmt_);
+        if (!SQL_SUCCEEDED(rc))
+        {
+            if (rc == SQL_NO_DATA)
+                return false;
+            throw odbc_exception(rc, SQL_HANDLE_STMT, stmt_);
+        }
+
+        for (int i = 0; i < cols_; i++)
+        {
+            column_info& col = column_info_[i];
+            if (col.lob)
+                init_lob_buffer(col.buffer);
+
+            rc = SQLGetData(
                 stmt_,
                 i + 1,
                 col.c_type,
@@ -169,29 +191,37 @@ public:
             );
             if (!SQL_SUCCEEDED(rc))
                 throw odbc_exception(rc, SQL_HANDLE_STMT, stmt_);
-        }
-    }
-    
-    bool fetch()
-    {
-        if (cols_ > 0)
-        {
-            //realloc lob buffers
-            for (int i = 0; i < cols_; i++)
+            
+            if (rc == SQL_SUCCESS_WITH_INFO && col.lob)
             {
-                if (column_info_[i].lob)
-                    init_lob_buffer(column_info_[i].buffer);
+                size_t char_size = (col.c_type == SQL_C_WCHAR) ? sizeof(SQLWCHAR) : sizeof(SQLCHAR);
+                if (col.len_or_ind != SQL_NO_TOTAL)
+                {
+                    size_t current_index = col.buffer.size() - char_size;
+                    col.buffer.resize(col.len_or_ind + char_size);
+                    SQLINTEGER remaining_bytes(col.buffer.size() - current_index);
+                    char * buf_ptr = &col.buffer[current_index];
+                    rc = SQLGetData(
+                        stmt_,
+                        i + 1,
+                        col.c_type,
+                        buf_ptr,
+                        remaining_bytes,
+                        &col.len_or_ind
+                    );
+                    if (!SQL_SUCCEEDED(rc))
+                        throw odbc_exception(rc, SQL_HANDLE_STMT, stmt_);
+                }
+                else
+                {
+                    //read in chunks
+                }
+                //reset length
+                col.len_or_ind = col.buffer.size() - char_size;
             }
-
-            SQLRETURN rc = SQLFetch(stmt_);
-            if SQL_SUCCEEDED(rc)
-                return true;
-            if (rc != SQL_NO_DATA)
-                throw odbc_exception(rc, SQL_HANDLE_STMT, stmt_);
         }
+        return true;
 
-        
-        return false;
     }
 
     short columns()
@@ -259,7 +289,8 @@ public:
     
     const char* get_char(int i)
     {
-        return column_info_[i].buffer.data();
+        column_info& col = column_info_[i];
+        return col.buffer.data();
     }
     
     ~mssql_statement()
@@ -274,7 +305,7 @@ private:
 
     void init_lob_buffer(std::vector<char>& buffer)
     {
-        size_t size(1024);
+        size_t size(512);
         if (buffer.size() != size)
             buffer = std::vector<char>(size);
     }
