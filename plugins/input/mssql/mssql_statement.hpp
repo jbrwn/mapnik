@@ -25,8 +25,9 @@ class mssql_statement
             sql_scale(0),
             sql_nullable(0),
             c_type(0),
+            c_len(0),
             len_or_ind(0),
-            buffer(NULL),
+            buffer(0),
             lob(0)
         {}
         ~column_info()
@@ -39,6 +40,7 @@ class mssql_statement
         SQLSMALLINT sql_scale;
         SQLSMALLINT sql_nullable;
         SQLSMALLINT c_type;
+        size_t c_len;
         SQLLEN len_or_ind;
         std::vector<char> buffer;
         bool lob;
@@ -107,43 +109,43 @@ public:
                 case SQL_WCHAR:
                 case SQL_WVARCHAR:
                     col.c_type = SQL_C_WCHAR;
-                    col.buffer.resize(sizeof(SQLWCHAR) * (col.sql_size + 1));
+                    col.c_len = sizeof(SQLWCHAR) * (col.sql_size + 1);
                     break;
                 case SQL_WLONGVARCHAR:
                     col.c_type = SQL_C_WCHAR;
                     col.lob = true;
-                    init_lob_buffer(col.buffer);
+                    col.c_len = 1024;
                     break;
                 case SQL_CHAR:
                 case SQL_VARCHAR:
                     col.c_type = SQL_C_CHAR;
-                    col.buffer.resize(sizeof(SQLCHAR) * (col.sql_size + 1));
+                    col.c_len = sizeof(SQLCHAR) * (col.sql_size + 1);
                     break;
                 case SQL_LONGVARCHAR:
                     col.c_type = SQL_C_CHAR;
                     col.lob = true;
-                    init_lob_buffer(col.buffer);
+                    col.c_len = 1024;
                     break;
                 case SQL_BINARY:
                 case SQL_VARBINARY:
-                    col.c_type = SQL_C_CHAR;
-                    col.buffer.resize(sizeof(SQLCHAR) * col.sql_size);
+                    col.c_type = SQL_C_BINARY;
+                    col.c_len = col.sql_size;
                     break;
                 case SQL_LONGVARBINARY:
-                    col.c_type = SQL_C_CHAR;
+                    col.c_type = SQL_C_BINARY;
                     col.lob = true;
-                    init_lob_buffer(col.buffer);
+                    col.c_len = 1024;
                     break;
                 case SQL_BIT:
                 case SQL_TINYINT:
                 case SQL_SMALLINT:
                 case SQL_INTEGER:
                     col.c_type = SQL_C_LONG;
-                    col.buffer.resize(sizeof(SQLINTEGER));
+                    col.c_len = sizeof(SQLINTEGER);
                     break;
                 case SQL_BIGINT:
                     col.c_type = SQL_C_SBIGINT;
-                    col.buffer.resize(sizeof(SQLBIGINT));
+                    col.c_len = sizeof(SQLBIGINT);
                     break;
                 case SQL_DOUBLE:
                 case SQL_FLOAT:
@@ -151,11 +153,11 @@ public:
                 case SQL_REAL:
                 case SQL_NUMERIC:
                     col.c_type = SQL_C_DOUBLE;
-                    col.buffer.resize(sizeof(SQLDOUBLE));
+                    col.c_len = sizeof(SQLDOUBLE);
                     break;
                 default:
                     col.c_type = SQL_C_CHAR;
-                    col.buffer.resize(64);
+                    col.c_len = 128;
                     break;
             }
         }
@@ -178,9 +180,7 @@ public:
         for (int i = 0; i < cols_; i++)
         {
             column_info& col = column_info_[i];
-            if (col.lob)
-                init_lob_buffer(col.buffer);
-
+            col.buffer.resize(col.c_len);
             rc = SQLGetData(
                 stmt_,
                 i + 1,
@@ -194,7 +194,12 @@ public:
             
             if (rc == SQL_SUCCESS_WITH_INFO && col.lob)
             {
-                size_t char_size = (col.c_type == SQL_C_WCHAR) ? sizeof(SQLWCHAR) : sizeof(SQLCHAR);
+                size_t char_size(0);
+                if (col.c_type == SQL_C_WCHAR)
+                    char_size = sizeof(SQLWCHAR);
+                if (col.c_type == SQL_C_CHAR)
+                    char_size =  sizeof(SQLCHAR);
+
                 if (col.len_or_ind != SQL_NO_TOTAL)
                 {
                     size_t current_index = col.buffer.size() - char_size;
@@ -211,13 +216,14 @@ public:
                     );
                     if (!SQL_SUCCEEDED(rc))
                         throw odbc_exception(rc, SQL_HANDLE_STMT, stmt_);
+
+                    //reset length
+                    col.len_or_ind = col.buffer.size() - char_size;
                 }
                 else
                 {
-                    //read in chunks
+                    //TO DO: read in chunks if SQL_NO_TOTAL
                 }
-                //reset length
-                col.len_or_ind = col.buffer.size() - char_size;
             }
         }
         return true;
@@ -302,13 +308,6 @@ private:
     SQLSMALLINT cols_;
     std::string sql_;
     SQLHSTMT stmt_;
-
-    void init_lob_buffer(std::vector<char>& buffer)
-    {
-        size_t size(512);
-        if (buffer.size() != size)
-            buffer = std::vector<char>(size);
-    }
 };
 
 #endif // MSSQL_STATEMENT_HPP
