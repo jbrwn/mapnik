@@ -31,13 +31,16 @@ public:
     mapnik::layer_descriptor get_descriptor() const;
     
 private:
+    std::string connection_string_;
     std::string table_;
     std::string geometry_field_;
+    int srid_;
     std::string sort_field_;
     std::string sort_order_;
     mapnik::box2d<double> extent_;
     mapnik::layer_descriptor desc_;
     std::unique_ptr<mssql_connection> connection_;
+    std::string box_to_sqlgeom(mapnik::box2d<double> const& box, int srid) const;
 };
 
 

@@ -246,9 +246,9 @@ public:
         return column_info_[i].name;
     }
 
-    std::string get_type(int i)
+    short get_type(int i)
     {
-        column_info_[i].native_type;
+        column_info_[i].sql_type;
     }
 
     int get_length(int i)
