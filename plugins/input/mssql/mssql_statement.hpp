@@ -204,7 +204,7 @@ public:
                 {
                     size_t current_index = col.buffer.size() - char_size;
                     col.buffer.resize(col.len_or_ind + char_size);
-                    SQLINTEGER remaining_bytes(col.buffer.size() - current_index);
+                    SQLLEN remaining_bytes(col.buffer.size() - current_index);
                     char * buf_ptr = &col.buffer[current_index];
                     rc = SQLGetData(
                         stmt_,
@@ -248,12 +248,12 @@ public:
 
     short get_type(int i)
     {
-        column_info_[i].sql_type;
+        return column_info_[i].sql_type;
     }
 
-    int get_length(int i)
+    size_t get_length(int i)
     {
-        int value = 0;
+        size_t value = 0;
         column_info& col = column_info_[i];
         if (col.len_or_ind != SQL_NULL_DATA)
         {
