@@ -19,9 +19,10 @@ mssql_datasource::mssql_datasource(parameters const& params)
       connection_string_(*params.get<std::string>("connection_string", "")),
       table_(*params.get<std::string>("table","")),
       geometry_field_(*params.get<std::string>("geometry_field","")),
-      srid_(*params.get<int>("srid",0)),
+      srid_(*params.get<mapnik::value_integer>("srid", 0)),
       sort_field_(*params.get<std::string>("sort_field","")),
       sort_order_(*params.get<std::string>("sort_order","ASC")),
+      encoding_(*params.get<std::string>("encoding","")),
       extent_(),
       desc_(mssql_datasource::name(),*params.get<std::string>("encoding","utf-8"))
 {
@@ -50,8 +51,18 @@ mssql_datasource::mssql_datasource(parameters const& params)
         throw mapnik::datasource_exception("missing <extent> parameter");
     extent_.from_string(*ext);
     
+    //SQL_C_CHAR encoding is driver specific and not available in the ODBC api
+    //best we can do is choose sensible defaults
+    if (encoding_.empty())
+    {
+#ifdef _WINDOWS
+        encoding_ = "Windows-1252"
+#endif // _WINDOWS
+        encoding_ = "utf-8";
+    }
+    
     //create connection
-    connection_ = std::make_unique<mssql_connection>(mssql_connection(connection_string_));
+    connection_ = std::make_unique<mssql_connection>(connection_string_);
 
     //populate desc_
     mssql_statement stmt(*connection_, "SELECT TOP 0 * FROM " + table_);
@@ -141,7 +152,7 @@ mapnik::featureset_ptr mssql_datasource::features(mapnik::query const& q) const
     stmt->execute();
 
 
-    return std::make_shared<mssql_featureset>(box, "utf-8");
+    return std::make_shared<mssql_featureset>(stmt,ctx,encoding_);
 }
 
 mapnik::featureset_ptr mssql_datasource::features_at_point(mapnik::coord2d const& pt, double tol) const
@@ -155,11 +166,11 @@ std::string mssql_datasource::box_to_sqlgeom(mapnik::box2d<double> const& box, i
 {
     std::stringstream ss;
     ss << "geometry::STPolyFromText('POLYGON(("
-        << box.minx << " " << box.miny << ", "
-        << box.maxx << " " << box.miny << ", "
-        << box.maxx << " " << box.maxy << ", "
-        << box.minx << " " << box.maxy << ", "
-        << box.minx << " " << box.miny 
+        << box.minx() << " " << box.miny() << ", "
+        << box.maxx() << " " << box.miny() << ", "
+        << box.maxx() << " " << box.maxy() << ", "
+        << box.minx() << " " << box.maxy() << ", "
+        << box.minx() << " " << box.miny()
         << "))', " << srid << ")";
     return ss.str();
 }

@@ -38,6 +38,7 @@ private:
     std::string sort_field_;
     std::string sort_order_;
     mapnik::box2d<double> extent_;
+    std::string encoding_;
     mapnik::layer_descriptor desc_;
     std::unique_ptr<mssql_connection> connection_;
     std::string box_to_sqlgeom(mapnik::box2d<double> const& box, int srid) const;
